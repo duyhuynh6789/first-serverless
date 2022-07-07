@@ -1,5 +1,5 @@
 # TODO: Change the name of the org 
-org: sudkul
+org: duyhuynh
 app: serverless-todo-app
 service: serverless-todo-app
 
@@ -103,26 +103,105 @@ functions:
 
 resources:
   Resources:
+    RestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: myRestApi
     # Add necessary AWS resources. You will need at least the following AWS resources
     # TODO: Fill the properties
     # Feel free to change the names as you like. 
     GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
+        ResponseParameters:
+           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+           gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: 'RestApi'
     
     # TODO: Create a DynamoDB table with local secondary index and a composite key
     TodosTable:
       Type: AWS::DynamoDB::Table
       Properties:
+        AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: todoId
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: todoId
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:provider.environment.TODOS_TABLE}
+        LocalSecondaryIndexes:
+          - IndexName: ${self:provider.environment.TODOS_CREATED_AT_INDEX}
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL # What attributes will be copied to an index
 
     # TODO: Complete the bucket properties below. 
     # Do not forget to add the CorsConfiguration propoerty
     AttachmentsBucket:
       Type: AWS::S3::Bucket
       Properties:
+        AccessControl: PublicRead
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - '*'
+              AllowedMethods:
+                - GET
+              AllowedOrigins:
+                - '*'
+              ExposedHeaders:
+                - Date
+              Id: myCORSRuleId1
+              MaxAge: 3600
+            - AllowedHeaders:
+                - x-amz-*
+              AllowedMethods:
+                - DELETE
+              AllowedOrigins:
+                - 'http://localhost'
+              ExposedHeaders:
+                - Connection
+                - Server
+                - Date
+              Id: myCORSRuleId2
+              MaxAge: 1800
 
     # TODO: Complete the policy below and attach it to the bucket defined above
     # For cross referencing the name of the bucket, use "!Ref AttachmentsBucket"
     BucketPolicy:
       Type: AWS::S3::BucketPolicy
       Properties:
+        Bucket: !Ref AttachmentsBucket
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Action:
+                - 's3:GetObject'
+              Effect: Allow
+              Resource: !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref AttachmentsBucket
+                  - /*
+              Principal: '*'
+              Condition:
+                StringLike:
+                  'aws:Referer':
+                    - 'http://localhost/*'
+  Outputs:
+    BucketName:
+      Value: !Ref AttachmentsBucket
+      Description: Name of the sample Amazon S3 bucket with CORS enabled.
