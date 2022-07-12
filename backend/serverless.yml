@@ -27,7 +27,6 @@ provider:
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     ATTACHMENT_S3_BUCKET: serverless--duyhuynh-c4-todo-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-
   logs:
     # Enable API Gateway logs
     restApi: true
@@ -56,7 +55,7 @@ functions:
           method: get
           path: todos
           cors: true
-          # authorizer: Auth
+          authorizer: Auth
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -79,7 +78,12 @@ functions:
           request:
             schemas:
               application/json: ${file(models/create-todo-model.json)}
-
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements, and request schemas
   UpdateTodo:
@@ -88,7 +92,17 @@ functions:
       - http:
           method: patch
           path: todos/{todoId}
-
+          cors: true
+          authorizer: Auth
+          request:
+            schemas:
+              application/json: ${file(models/update-todo-model.json)}
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
   DeleteTodo:
@@ -97,7 +111,14 @@ functions:
       - http:
           method: delete
           path: todos/{todoId}
-
+          cors: true
+          authorizer: Auth
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:DeleteItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
   # TODO: Configure this function
   # Provide property for setting up CORS, Authorizer, iamRoleStatements
   GenerateUploadUrl:
@@ -106,7 +127,14 @@ functions:
       - http:
           method: post
           path: todos/{todoId}/attachment
-
+          cors: true
+          authorizer: Auth
+    iamRoleStatementsInherit: true
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - dynamodb:UpdateItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 resources:
   Resources:
     RestApi:
@@ -137,14 +165,6 @@ resources:
           AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
-        - AttributeName: name
-          AttributeType: S
-        - AttributeName: dueDate
-          AttributeType: S
-        - AttributeName: done
-          AttributeType: B
-        - AttributeName: attachmentUrl
-          AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
@@ -161,38 +181,6 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL # What attributes will be copied to an index
-          - IndexName: Test1
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: name
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
-          - IndexName: Test2
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: dueDate
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
-          - IndexName: Test3
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: done
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
-          - IndexName: Test4
-            KeySchema:
-              - AttributeName: userId
-                KeyType: HASH
-              - AttributeName: attachmentUrl
-                KeyType: RANGE
-            Projection:
-              ProjectionType: ALL # What attributes will be copied to an index
     # TODO: Complete the bucket properties below. 
     # Do not forget to add the CorsConfiguration propoerty
     AttachmentsBucket:
@@ -206,6 +194,7 @@ resources:
                 - '*'
               AllowedMethods:
                 - GET
+                - PUT
               AllowedOrigins:
                 - '*'
               ExposedHeaders:
@@ -215,9 +204,10 @@ resources:
             - AllowedHeaders:
                 - x-amz-*
               AllowedMethods:
+                - PUT
                 - DELETE
               AllowedOrigins:
-                - 'http://localhost:3000'
+                - 'http://localhost:3000/*'
               ExposedHeaders:
                 - Connection
                 - Server
@@ -236,6 +226,7 @@ resources:
           Statement:
             - Action:
                 - 's3:GetObject'
+                - 's3:PutObject'
               Effect: Allow
               Resource: !Join
                 - ''
