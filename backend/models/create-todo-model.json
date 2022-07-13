@@ -5,7 +5,8 @@
   "properties": {
     "name": {
       "type": "string",
-      "pattern": "^[a-zA-Z0-9]+$"
+      "pattern": "^[a-zA-Z0-9]+$",
+      "minLength": 1
     },
     "dueDate": {
       "type": "string"

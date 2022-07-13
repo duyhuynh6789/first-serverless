@@ -35,7 +35,7 @@ export async function createTodos(
         name: createTodoRequest.name,
         dueDate: createTodoRequest.dueDate,
         done: false,
-        attachmentUrl: "http://example.com/image.png"
+        attachmentUrl: ""
     })
 }
 
