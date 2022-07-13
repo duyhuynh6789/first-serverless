@@ -29,6 +29,12 @@ export const handler = middy(
       }
     } catch (e) {
       logger.error('## Get todo has errors: ', { error: e.message })
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          "message": "System errors"
+        })
+      }
     }
   })
 
