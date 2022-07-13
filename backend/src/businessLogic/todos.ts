@@ -1,4 +1,4 @@
-import { TodoItem } from './../models/TodoItem';
+import { TodoItem } from '../models/TodoItem';
 // import { AttachmentUtils } from './attachmentUtils';
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
 import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
@@ -6,8 +6,8 @@ import { createLogger } from '../utils/logger'
 import * as uuid from 'uuid'
 import * as createError from 'http-errors'
 import * as AWS from 'aws-sdk';
-import { TodosAccess } from './todosAcess';
 import * as AWSXRay from 'aws-xray-sdk'
+import { TodosAccess } from '../dataLayer/todosAcess';
 
 const todosAccess = new TodosAccess();
 const bucketName = process.env.ATTACHMENT_S3_BUCKET
