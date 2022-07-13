@@ -76,6 +76,7 @@ export class TodosAccess {
         return await this.docClient.update(params).promise();
     }
 }
+
 function createDynamoDBClient() {
     if (process.env.IS_OFFLINE) {
         console.log('Creating a local DynamoDB instance')
